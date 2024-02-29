@@ -24,7 +24,7 @@
     const ctx = canvas.getContext('2d');
 
     const spheres = [];
-    let spawnOnMouseMove = false;
+    let isRightMouseDown = false;
 
     function createSphere(x, y) {
       const sphere = {
@@ -127,10 +127,9 @@
       // Schedule the next update
       requestAnimationFrame(updateSpheres);
 
-      // Spawn a sphere at the mouse position if flag is set
-      if (spawnOnMouseMove) {
+      // Spawn a sphere at the mouse position if right mouse button is down
+      if (isRightMouseDown) {
         createSphere(mouseX, mouseY);
-        spawnOnMouseMove = false;
       }
     }
 
@@ -175,8 +174,8 @@
           }
         }
       } else if (event.button === 2) {
-        // Right mouse button (spawn a sphere on mouse move)
-        spawnOnMouseMove = true;
+        // Right mouse button (set flag to continuously spawn spheres)
+        isRightMouseDown = true;
       }
     });
 
@@ -195,6 +194,9 @@
           sphere.velocityY = (mouseY - startMouseY) * 0.1;
         }
       }
+
+      // Right mouse button released
+      isRightMouseDown = false;
     });
 
     // Disable right-click context menu

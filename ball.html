@@ -14,7 +14,7 @@
       display: block;
     }
   </style>
-  <title>2D Physics Sphere</title>
+  <title>2D Physics Spheres</title>
 </head>
 <body>
   <canvas id="canvas"></canvas>
@@ -23,21 +23,27 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    const sphere = {
-      x: 100,
-      y: 100,
-      radius: 20,
-      color: 'blue',
-      velocityX: 0,
-      velocityY: 0,
-      gravity: 0.1,
-      damping: 0.9,
-      isDragging: false,
-      dragOffsetX: 0,
-      dragOffsetY: 0,
-    };
+    const spheres = [];
 
-    function drawSphere() {
+    function createSphere(x, y) {
+      const sphere = {
+        x,
+        y,
+        radius: 20,
+        color: 'blue',
+        velocityX: 0,
+        velocityY: 0,
+        gravity: 0.1,
+        damping: 0.9,
+        isDragging: false,
+        dragOffsetX: 0,
+        dragOffsetY: 0,
+      };
+
+      spheres.push(sphere);
+    }
+
+    function drawSphere(sphere) {
       ctx.beginPath();
       ctx.arc(sphere.x, sphere.y, sphere.radius, 0, 2 * Math.PI);
       ctx.fillStyle = sphere.color;
@@ -45,37 +51,80 @@
       ctx.closePath();
     }
 
-    function updateSphere() {
-      if (sphere.isDragging) {
-        // Update position based on mouse drag
-        sphere.x = mouseX - sphere.dragOffsetX;
-        sphere.y = mouseY - sphere.dragOffsetY;
-      } else {
-        // Update position based on velocity
-        sphere.x += sphere.velocityX;
-        sphere.y += sphere.velocityY;
+    function updateSpheres() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Apply gravity
-        sphere.velocityY += sphere.gravity;
+      for (let i = 0; i < spheres.length; i++) {
+        const sphereA = spheres[i];
 
-        // Bounce off the walls
-        if (sphere.x - sphere.radius < 0 || sphere.x + sphere.radius > canvas.width) {
-          sphere.velocityX = -sphere.velocityX * sphere.damping;
+        if (sphereA.isDragging) {
+          // Update position based on mouse drag
+          sphereA.x = mouseX - sphereA.dragOffsetX;
+          sphereA.y = mouseY - sphereA.dragOffsetY;
+        } else {
+          // Update position based on velocity
+          sphereA.x += sphereA.velocityX;
+          sphereA.y += sphereA.velocityY;
+
+          // Apply gravity
+          sphereA.velocityY += sphereA.gravity;
+
+          // Bounce off the walls
+          if (sphereA.x - sphereA.radius < 0 || sphereA.x + sphereA.radius > canvas.width) {
+            sphereA.velocityX = -sphereA.velocityX * sphereA.damping;
+          }
+
+          // Bounce off the floor
+          if (sphereA.y + sphereA.radius > canvas.height) {
+            sphereA.y = canvas.height - sphereA.radius;
+            sphereA.velocityY = -sphereA.velocityY * sphereA.damping;
+          }
         }
 
-        // Bounce off the floor
-        if (sphere.y + sphere.radius > canvas.height) {
-          sphere.y = canvas.height - sphere.radius;
-          sphere.velocityY = -sphere.velocityY * sphere.damping;
+        // Check for collisions with other spheres
+        for (let j = i + 1; j < spheres.length; j++) {
+          const sphereB = spheres[j];
+
+          const dx = sphereB.x - sphereA.x;
+          const dy = sphereB.y - sphereA.y;
+          const distance = Math.sqrt(dx ** 2 + dy ** 2);
+
+          if (distance < sphereA.radius + sphereB.radius) {
+            // Collisions handling
+            const angle = Math.atan2(dy, dx);
+            const sine = Math.sin(angle);
+            const cosine = Math.cos(angle);
+
+            // Rotate sphere velocities
+            const vx1 = cosine * sphereA.velocityX + sine * sphereA.velocityY;
+            const vy1 = cosine * sphereA.velocityY - sine * sphereA.velocityX;
+            const vx2 = cosine * sphereB.velocityX + sine * sphereB.velocityY;
+            const vy2 = cosine * sphereB.velocityY - sine * sphereB.velocityX;
+
+            // Adjust velocities after collision
+            const finalVx1 = ((sphereA.radius - sphereB.radius) * vx1 + 2 * sphereB.radius * vx2) / (sphereA.radius + sphereB.radius);
+            const finalVx2 = ((sphereB.radius - sphereA.radius) * vx2 + 2 * sphereA.radius * vx1) / (sphereA.radius + sphereB.radius);
+
+            sphereA.velocityX = cosine * finalVx1 + sine * vy1;
+            sphereA.velocityY = cosine * vy1 - sine * finalVx1;
+            sphereB.velocityX = cosine * finalVx2 + sine * vy2;
+            sphereB.velocityY = cosine * vy2 - sine * finalVx2;
+
+            // Move spheres away from each other to prevent sticking
+            const overlap = (sphereA.radius + sphereB.radius - distance) * 0.5;
+            sphereA.x -= overlap * cosine;
+            sphereA.y -= overlap * sine;
+            sphereB.x += overlap * cosine;
+            sphereB.y += overlap * sine;
+          }
         }
+
+        // Draw the sphere
+        drawSphere(sphereA);
       }
 
-      // Draw the sphere
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawSphere();
-
       // Schedule the next update
-      requestAnimationFrame(updateSphere);
+      requestAnimationFrame(updateSpheres);
     }
 
     // Set up canvas size
@@ -83,7 +132,7 @@
     canvas.height = window.innerHeight;
 
     // Start the animation
-    updateSphere();
+    updateSpheres();
 
     // Resize canvas when the window is resized
     window.addEventListener('resize', () => {
@@ -97,11 +146,22 @@
 
     // Event listeners for mouse events
     canvas.addEventListener('mousedown', (event) => {
-      sphere.isDragging = true;
-      startMouseX = mouseX = event.clientX;
-      startMouseY = mouseY = event.clientY;
-      sphere.dragOffsetX = event.clientX - sphere.x;
-      sphere.dragOffsetY = event.clientY - sphere.y;
+      if (event.button === 0) {
+        // Left mouse button (throwing)
+        for (const sphere of spheres) {
+          const distance = Math.sqrt((event.clientX - sphere.x)**2 + (event.clientY - sphere.y)**2);
+          if (distance <= sphere.radius) {
+            sphere.isDragging = true;
+            startMouseX = mouseX = event.clientX;
+            startMouseY = mouseY = event.clientY;
+            sphere.dragOffsetX = event.clientX - sphere.x;
+            sphere.dragOffsetY = event.clientY - sphere.y;
+          }
+        }
+      } else if (event.button === 2) {
+        // Right mouse button (spawn new sphere)
+        createSphere(event.clientX, event.clientY);
+      }
     });
 
     canvas.addEventListener('mousemove', (event) => {
@@ -110,13 +170,20 @@
     });
 
     canvas.addEventListener('mouseup', () => {
-      if (sphere.isDragging) {
-        sphere.isDragging = false;
+      for (const sphere of spheres) {
+        if (sphere.isDragging) {
+          sphere.isDragging = false;
 
-        // Calculate velocity based on mouse movement
-        sphere.velocityX = (mouseX - startMouseX) * 0.1;
-        sphere.velocityY = (mouseY - startMouseY) * 0.1;
+          // Calculate velocity based on mouse movement
+          sphere.velocityX = (mouseX - startMouseX) * 0.1;
+          sphere.velocityY = (mouseY - startMouseY) * 0.1;
+        }
       }
+    });
+
+    // Disable right-click context menu
+    canvas.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
     });
   </script>
 </body>

@@ -153,6 +153,25 @@
       clearInterval(spawnInterval);
     }
 
+    function explodeSpheres() {
+      const explosionRadius = 256;
+
+      for (const sphere of spheres) {
+        const dx = sphere.x - mouseX;
+        const dy = sphere.y - mouseY;
+        const distance = Math.sqrt(dx ** 2 + dy ** 2);
+
+        if (distance < explosionRadius) {
+          const angle = Math.atan2(dy, dx);
+          const force = (explosionRadius - distance) / explosionRadius * 10; // Adjust the force as needed
+
+          // Apply force away from the explosion center
+          sphere.velocityX += force * Math.cos(angle);
+          sphere.velocityY += force * Math.sin(angle);
+        }
+      }
+    }
+
     // Set up canvas size
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -210,6 +229,13 @@
       // Right mouse button released (stop spawning spheres)
       isRightMouseDown = false;
       stopSpawnInterval();
+    });
+
+    // Explosion on 'e' key press
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'e') {
+        explodeSpheres();
+      }
     });
 
     // Disable right-click context menu

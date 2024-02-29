@@ -24,7 +24,7 @@
     const ctx = canvas.getContext('2d');
 
     const spheres = [];
-    let spawnInterval;
+    let spawnOnMouseMove = false;
 
     function createSphere(x, y) {
       const sphere = {
@@ -126,6 +126,12 @@
 
       // Schedule the next update
       requestAnimationFrame(updateSpheres);
+
+      // Spawn a sphere at the mouse position if flag is set
+      if (spawnOnMouseMove) {
+        createSphere(mouseX, mouseY);
+        spawnOnMouseMove = false;
+      }
     }
 
     function getRandomColor() {
@@ -135,16 +141,6 @@
         color += letters[Math.floor(Math.random() * 16)];
       }
       return color;
-    }
-
-    function startSpawnInterval() {
-      spawnInterval = setInterval(() => {
-        createSphere(Math.random() * canvas.width, Math.random() * canvas.height);
-      }, 500); // Change 500 to adjust the interval between spawns
-    }
-
-    function stopSpawnInterval() {
-      clearInterval(spawnInterval);
     }
 
     // Set up canvas size
@@ -179,8 +175,8 @@
           }
         }
       } else if (event.button === 2) {
-        // Right mouse button (start spawning spheres)
-        startSpawnInterval();
+        // Right mouse button (spawn a sphere on mouse move)
+        spawnOnMouseMove = true;
       }
     });
 
@@ -199,9 +195,6 @@
           sphere.velocityY = (mouseY - startMouseY) * 0.1;
         }
       }
-
-      // Right mouse button released (stop spawning spheres)
-      stopSpawnInterval();
     });
 
     // Disable right-click context menu

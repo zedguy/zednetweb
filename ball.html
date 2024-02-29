@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #333; /* Dark gray background */
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+  <title>2D Physics Sphere</title>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const sphere = {
+      x: 100,
+      y: 100,
+      radius: 20,
+      color: 'blue',
+      velocityX: 0,
+      velocityY: 0,
+      gravity: 0.1,
+      damping: 0.9,
+      isDragging: false,
+      dragOffsetX: 0,
+      dragOffsetY: 0,
+    };
+
+    function drawSphere() {
+      ctx.beginPath();
+      ctx.arc(sphere.x, sphere.y, sphere.radius, 0, 2 * Math.PI);
+      ctx.fillStyle = sphere.color;
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function updateSphere() {
+      if (sphere.isDragging) {
+        // Update position based on mouse drag
+        sphere.x = mouseX - sphere.dragOffsetX;
+        sphere.y = mouseY - sphere.dragOffsetY;
+      } else {
+        // Update position based on velocity
+        sphere.x += sphere.velocityX;
+        sphere.y += sphere.velocityY;
+
+        // Apply gravity
+        sphere.velocityY += sphere.gravity;
+
+        // Bounce off the walls
+        if (sphere.x - sphere.radius < 0 || sphere.x + sphere.radius > canvas.width) {
+          sphere.velocityX = -sphere.velocityX * sphere.damping;
+        }
+
+        // Bounce off the floor
+        if (sphere.y + sphere.radius > canvas.height) {
+          sphere.y = canvas.height - sphere.radius;
+          sphere.velocityY = -sphere.velocityY * sphere.damping;
+        }
+      }
+
+      // Draw the sphere
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawSphere();
+
+      // Schedule the next update
+      requestAnimationFrame(updateSphere);
+    }
+
+    // Set up canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Start the animation
+    updateSphere();
+
+    // Resize canvas when the window is resized
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Variables for mouse position
+    let mouseX, mouseY;
+    let startMouseX, startMouseY;
+
+    // Event listeners for mouse events
+    canvas.addEventListener('mousedown', (event) => {
+      sphere.isDragging = true;
+      startMouseX = mouseX = event.clientX;
+      startMouseY = mouseY = event.clientY;
+      sphere.dragOffsetX = event.clientX - sphere.x;
+      sphere.dragOffsetY = event.clientY - sphere.y;
+    });
+
+    canvas.addEventListener('mousemove', (event) => {
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      if (sphere.isDragging) {
+        sphere.isDragging = false;
+
+        // Calculate velocity based on mouse movement
+        sphere.velocityX = (mouseX - startMouseX) * 0.1;
+        sphere.velocityY = (mouseY - startMouseY) * 0.1;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -25,6 +25,7 @@
 
     const spheres = [];
     let isRightMouseDown = false;
+    let spawnInterval;
 
     function createSphere(x, y) {
       const sphere = {
@@ -142,6 +143,16 @@
       return color;
     }
 
+    function startSpawnInterval() {
+      spawnInterval = setInterval(() => {
+        createSphere(mouseX, mouseY);
+      }, 100); // Adjust the delay (currently set to 100 milliseconds)
+    }
+
+    function stopSpawnInterval() {
+      clearInterval(spawnInterval);
+    }
+
     // Set up canvas size
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -174,8 +185,9 @@
           }
         }
       } else if (event.button === 2) {
-        // Right mouse button (set flag to continuously spawn spheres)
+        // Right mouse button (start spawning spheres with delay)
         isRightMouseDown = true;
+        startSpawnInterval();
       }
     });
 
@@ -195,8 +207,9 @@
         }
       }
 
-      // Right mouse button released
+      // Right mouse button released (stop spawning spheres)
       isRightMouseDown = false;
+      stopSpawnInterval();
     });
 
     // Disable right-click context menu
